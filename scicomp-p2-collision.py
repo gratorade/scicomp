@@ -6,12 +6,14 @@ import numpy as np
 import random 
 import pygame
 import math
+from itertools import combinations
 
 #details of Pygame window
-background_color = (255,255,255)
-(width, height) = (300, 200)
+background_color = (255, 204, 255)
+(width, height) = (500, 500)
 
-#Gaussian distribution of initial velocities
+#array to hold Particle objects later
+all_particles = []
 
 class Particle:
     """
@@ -35,25 +37,19 @@ class Particle:
         self.mass = self.size**2
         self.angle = 0
         #attributes for graphics
-        self.color = (0,0,255)
-        self.thickness = 1
+        self.color = (0,51,0)
+        self.thickness = 2
         
     #setters and getters for convenience
     @property
     def x(self):
-        if self.position[0]>0:
-            return self.position[0]
-        else:
-            return abs(self.position[0])
+        return self.position[0]
     @x.setter
     def x(self, n):
         self.position[0] = n
     @property
     def y(self):
-        if self.position[1]>0:
-            return self.position[1]
-        else:
-            return abs(self.position[1])
+        return self.position[1]
     @y.setter
     def y(self, n):
         self.position[1] = n
@@ -108,19 +104,15 @@ class Particle:
             self.y = height-self.size
             self.vy = -self.vy
     
-
-def collide(p1, p2):
+def overlap(p1, p2):
     """
-    Method to handle collisions between Particles.
-    Particles will have elastic collisions:
-    since Particles have the same mass,
-    velocity will not be changed
-    to preserve momentum
-
-    First we have to to check whether two Particles have collided
+    Method for checking whether Particles overlap
     We can measure the distance between the Particles
     using its hypotenuse, and check whether this value is
-        less than their combined size
+    less than their combined size
+    
+    Useful for collide function
+    Also useful for starting positions of Particles
     """
     #change in positions
     dx = p1.x - p2.x
@@ -131,54 +123,79 @@ def collide(p1, p2):
         
     #if distance is less than the Particles' combined size
     if distance < p1.size + p2.size:
-        #handle collision
+        return True
+
+def collide(p1, p2):
+    """
+    Method to handle collisions between Particles.
+    Particles will have elastic collisions:
+    since Particles do not have the same mass,
+    velocity will be changed to preserve momentum
+    
+    This formula will be used:
+    m1u1 + m2u2 = m1v1 + m2v2
+    where u1 and u2 are the final velocities
+    and v1 and v2 are the initial velocities
+    """
+    #check of Particles overlap, then handle collision
+    if overlap(p1, p2):
         
         #find combined mass
         m1, m2 = p1.mass, p2.mass
         total_mass = m1 + m2
         
         #simplify variables
+        #initial positions and velocities
         r1, r2 = p1.position, p2.position
         v1, v2 = p1.velocity, p2.velocity
         
-        d = np.linalg.norm(r1 - r2)**2
-        
-        u1 = v1 - 2*m2 / total_mass * np.dot(v1-v2, r1-r2) / d * (r1 - r2)
-        u2 = v2 - 2*m1 / total_mass * np.dot(v2-v1, r2-r1) / d * (r2 - r1)
+        #finding new velocities with formula
+        u1 = ((m1-m2)*v1 + 2*m2*v2) / total_mass
+        u2 = ((m2-m1)*v2 + 2*m1*v1) / total_mass
         
         p1.velocity = u1
         p2.velocity = u2
-        
-        #find the tangent of collision
-        #tangent = math.atan2(dy, dx)
-        #find angle of collision
-        #angle = 0.5 * math.pi + tangent
-            
-        #find angle as it pertains to Particles
-        
-        #angle1 = 2*tangent - p1.angle
-        #angle2 = 2*tangent - p2.angle
 
-        #change angle
-        #p1.angle = angle1
-        #p2.angle = angle2
 
-        #change x and y vectors with angle
-        #p1.x += math.sin(angle)
-        #p1.y -= math.cos(angle)
-        #p2.x -= math.sin(angle)
-        #p2.y += math.cos(angle)
-
-        
 #creates Pygame screen
 screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption('Testing')
 
-#tests random Particle
-particle1 = Particle(150, 150, 0.2, 0.2, 20)
-particle2 = Particle(10, 10, 0.3, 0.3, 20)
-particle3 = Particle(10, 10, 0.3, 0.3, 20)
-
+for n in range(5):
+    #pick random size
+    size = random.randint(10, 50)
+    
+    #possible locations
+    locations = [*range(size, width-size)]
+    
+    #creates Gaussian distribution of initial velocities
+    gauss = np.random.normal(loc=0.0, scale=0.2, size=None)
+    
+    #random location within screen
+    x = random.choice(locations)
+    y = random.choice(locations)
+    
+    #create the Particle and append it to array
+    #Particles will have random velocity from Gaussian distribution
+    particle = Particle(x, y, gauss, gauss, size)
+    all_particles.append(particle)
+    
+    """
+    #ideally, two Particles would not start at the same location
+    #there are issues if they overlap at the start :(
+    #not sure how to fix
+    #tried this but it breaks the collide function
+    
+    if len(all_particles) <= 1:
+        all_particles.append(particle)
+    else:
+        for p2 in all_particles:
+            if overlap(p2, particle):
+                break
+            else:
+                all_particles.append(particle)         
+    """
+    
 running = True
 while running:
     for event in pygame.event.get():
@@ -186,15 +203,13 @@ while running:
             running = False
 
     screen.fill(background_color)
+    
+    for p in all_particles:
+        p.move()
+        p.display()
 
-    particle1.move()
-    particle2.move()
-    #particle3.move()
-    particle1.display()
-    particle2.display()
-    #particle3.display()
-    collide(particle1, particle2)
-    #collide(particle2, particle1)
-    #collide(particle1, particle3)
-
+    pairs = combinations(range(len(all_particles)), 2)
+    for i,j in pairs:
+        collide(all_particles[i], all_particles[j])
+    
     pygame.display.flip()
