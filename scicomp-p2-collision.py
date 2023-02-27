@@ -1,12 +1,21 @@
 """
 Author: Grace Fang
-Purpose: Project 2- elastic collision of particles for Scientific Computing
+Consulted:
+    1) Christian Hill (xnx on GitHub)
+        https://github.com/xnx/collision
+        https://scipython.com/blog/two-dimensional-collisions/
+    2) Peter Collingridge (petercollingridge on GitHub)
+        https://github.com/petercollingridge/code-for-blog/tree/master/pygame%20physics%20simulation
+        https://www.petercollingridge.co.uk/tutorials/pygame-physics-simulation/collisions/
+Purpose: Project 2, elastic collision of particles, for Scientific Computing at Olin College
+Date: 02/27/2023
 """
 import numpy as np
 import random 
 import pygame
 import math
 from itertools import combinations
+import matplotlib.pyplot as plt
 
 #details of Pygame window
 background_color = (255, 204, 255)
@@ -91,14 +100,17 @@ class Particle:
         if self.x - self.size < 0:
             self.x = self.size
             self.vx = -self.vx
+        
         #2: when Particle hits x-limit on right size
         if self.x + self.size > width:
             self.x = width-self.size
             self.vx = -self.vx
+        
         #3: when Particle hits y-limit on bottom
         if self.y - self.size < 0:
             self.y = self.size
             self.vy = -self.vy
+        
         #4: when Particle hits y-limit on top
         if self.y + self.size > height:
             self.y = height-self.size
@@ -145,14 +157,14 @@ def collide(p1, p2):
         total_mass = m1 + m2
         
         #simplify variables
-        #initial positions and velocities
-        r1, r2 = p1.position, p2.position
+        #initial velocities
         v1, v2 = p1.velocity, p2.velocity
         
         #finding new velocities with formula
         u1 = ((m1-m2)*v1 + 2*m2*v2) / total_mass
         u2 = ((m2-m1)*v2 + 2*m1*v1) / total_mass
         
+        #sets new velocities
         p1.velocity = u1
         p2.velocity = u2
 
@@ -161,55 +173,73 @@ def collide(p1, p2):
 screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption('Testing')
 
-for n in range(5):
-    #pick random size
-    size = random.randint(10, 50)
+#creating Particles
+n = 0
+#set the number of Particles to create
+while n in range(10):
+    #pick random size within specified range
+    #can't be smaller than 1/50th of height's length
+    #can't be larger than 1/10th of height's length
+    size = random.randint(height/50, height/10)
     
-    #possible locations
+    #possible locations, as a list
     locations = [*range(size, width-size)]
     
     #creates Gaussian distribution of initial velocities
+    #Particles will have initial random velocity from Gaussian distribution
+    #0.2 scale since that creates legible speeds
     gauss = np.random.normal(loc=0.0, scale=0.2, size=None)
     
     #random location within screen
     x = random.choice(locations)
     y = random.choice(locations)
     
+    #checks for overlap
+    for p2 in all_particles:
+        #does not add new Particle if it overlaps with existing one
+        if overlap(p2, Particle(x,y,0,0,size)):
+            #breaks out of for-loop, back to while loop
+            #tries again with a new location
+            break
+    #if new Particle does not overlap
     #create the Particle and append it to array
-    #Particles will have random velocity from Gaussian distribution
-    particle = Particle(x, y, gauss, gauss, size)
-    all_particles.append(particle)
-    
-    """
-    #ideally, two Particles would not start at the same location
-    #there are issues if they overlap at the start :(
-    #not sure how to fix
-    #tried this but it breaks the collide function
-    
-    if len(all_particles) <= 1:
+    #iterate because now we have placed a new Particle
+    else:  
+        particle = Particle(x, y, gauss, gauss, size)
         all_particles.append(particle)
-    else:
-        for p2 in all_particles:
-            if overlap(p2, particle):
-                break
-            else:
-                all_particles.append(particle)         
-    """
-    
-running = True
-while running:
+        n+=1
+
+
+#running through a set number of steps
+#this is to make finding displacement over time easier
+current = 0
+total = 1000
+#to set frames per second later
+clock = pygame.time.Clock()
+
+#while number of steps is not reached
+while current < total:
     for event in pygame.event.get():
+        #only quits when this is typed
         if event.type == pygame.QUIT:
-            running = False
+            pygame.quit()
+            sys.exit()
 
     screen.fill(background_color)
     
+    #moves and displays all Particles
     for p in all_particles:
         p.move()
         p.display()
 
+    #any pair of Particles can collide
     pairs = combinations(range(len(all_particles)), 2)
     for i,j in pairs:
         collide(all_particles[i], all_particles[j])
     
     pygame.display.flip()
+    
+    #sets frame rate for smoothness
+    clock.tick(100)
+    #iterate
+    current+=1
