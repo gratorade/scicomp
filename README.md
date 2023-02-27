@@ -1,6 +1,6 @@
 # scicomp project 2
  
-Project 2 Plan 
+How to run: python3 scicomp-p2-collision.py 
 
 Benchmark:
 For this project I will try to simulate Brownian motion with visual graphics, specifically modelling the movement of hard-sphere-like particles with elastic collision. My benchmark will be to have the “correct physics”. This entails achieving a slope of 1 (liquid state) when measuring the average displacement of particles, and having the correct velocity and movement of particles when they hit the wall as well as when they collide against each other. Results may include a graphic similar to Figure 3 in the paper (tracking particle movement), a scatter plot of particle locations over time, and a plot for the slope of average displacement.
