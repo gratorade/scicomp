@@ -1,28 +1,31 @@
 """
 Author: Grace Fang
-Consulted:
-    1) Christian Hill (xnx on GitHub)
-        https://github.com/xnx/collision
-        https://scipython.com/blog/two-dimensional-collisions/
-    2) Peter Collingridge (petercollingridge on GitHub)
-        https://github.com/petercollingridge/code-for-blog/tree/master/pygame%20physics%20simulation
-        https://www.petercollingridge.co.uk/tutorials/pygame-physics-simulation/collisions/
-Purpose: Project 2, elastic collision of particles, for Scientific Computing at Olin College
-Date: 02/27/2023
+Purpose: Project 2 elastic collision of particles
+         plotting average displacement over time on matplotlib
+         for Scientific Computing at Olin College
+Date: 03/01/2023
 """
 import numpy as np
 import random 
-import pygame
 import math
 from itertools import combinations
 import matplotlib.pyplot as plt
 
-#details of Pygame window
+#details of Pygame window: color and size
 background_color = (255, 204, 255)
 (width, height) = (500, 500)
 
 #array to hold Particle objects later
 all_particles = []
+
+#array to hold Particle positions, for plotting
+all_positions = []
+x_positions = []
+y_positions = []
+
+#average displacement is found with the total displacement
+#(sum of individual displacements), divided over the total timestep amount.
+#we can plot position over time, and calculate the slope.
 
 class Particle:
     """
@@ -74,14 +77,6 @@ class Particle:
     @vy.setter
     def vy(self, n):
         self.velocity[1] = n
-   
-
-    def display(self):
-        """
-        Method for drawing a citcle, which represents a Particle
-        """
-        pygame.draw.circle(screen, self.color,
-                           (self.x, self.y), self.size, self.thickness)
     
     def move(self):
         """
@@ -142,45 +137,40 @@ def collide(p1, p2):
     Method to handle collisions between Particles.
     Particles will have elastic collisions:
     since Particles do not have the same mass,
-    velocity will be changed to preserve momentum
+    velocity will be changed to preserve momentum.
     
     This formula will be used:
     m1u1 + m2u2 = m1v1 + m2v2
     where u1 and u2 are the final velocities
-    and v1 and v2 are the initial velocities
+    and v1 and v2 are the initial velocities.
     """
     #check of Particles overlap, then handle collision
     if overlap(p1, p2):
         
-        #find combined mass
+        #simplify variables: initial velocities and mass
+        v1, v2 = p1.velocity, p2.velocity
         m1, m2 = p1.mass, p2.mass
+        
+        #find combined mass
         total_mass = m1 + m2
         
-        #simplify variables
-        #initial velocities
-        v1, v2 = p1.velocity, p2.velocity
-        
-        #finding new velocities with formula
+        #finding new velocities (u1, u2) with formula
         u1 = ((m1-m2)*v1 + 2*m2*v2) / total_mass
         u2 = ((m2-m1)*v2 + 2*m1*v1) / total_mass
         
-        #sets new velocities
+        #sets new velocities for Particles
         p1.velocity = u1
         p2.velocity = u2
 
 
-#creates Pygame screen
-screen = pygame.display.set_mode((width, height))
-pygame.display.set_caption('Testing')
-
 #creating Particles
 n = 0
 #set the number of Particles to create
-while n in range(10):
+while n in range(1):
     #pick random size within specified range
     #can't be smaller than 1/50th of height's length
     #can't be larger than 1/10th of height's length
-    size = random.randint(height/50, height/10)
+    size = random.randint(int(height/50), int(height/10))
     
     #possible locations, as a list
     locations = [*range(size, width-size)]
@@ -209,37 +199,82 @@ while n in range(10):
         all_particles.append(particle)
         n+=1
 
-
-#running through a set number of steps
+#running through a set number of steps (1000)
 #this is to make finding displacement over time easier
 current = 0
-total = 1000
-#to set frames per second later
-clock = pygame.time.Clock()
+timesteps = 1000
 
 #while number of steps is not reached
-while current < total:
-    for event in pygame.event.get():
-        #only quits when this is typed
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
-
-    screen.fill(background_color)
-    
+while current < timesteps:
     #moves and displays all Particles
     for p in all_particles:
         p.move()
-        p.display()
-
+        #appending each position in array
+        all_positions.append(p.position)
+        x_positions.append(p.x)
+        y_positions.append(p.y)
     #any pair of Particles can collide
     pairs = combinations(range(len(all_particles)), 2)
     for i,j in pairs:
         collide(all_particles[i], all_particles[j])
-    
-    pygame.display.flip()
-    
-    #sets frame rate for smoothness
-    clock.tick(100)
     #iterate
     current+=1
+
+#to calculate x-displacement
+#calculate the difference between each pair of positions
+#add all differences to find sum --> total
+#divide over timestep --> average
+#hold all differences in array to plot later
+
+numx = 0
+x_displacement = 0
+x_array = []
+while numx < (len(x_positions)-1):
+    x_displacement += (x_positions[numx+1] - x_positions[numx])
+    x_array.append(x_displacement)
+    numx += 1
+
+print(f'total x-displacement is: {x_displacement}')
+
+average_x = x_displacement/timesteps
+print(f'average x-displacement is: {average_x}')
+
+plt.scatter(range(0,len(x_array)), x_array, color = "green")
+plt.xlim(0, len(x_array))
+plt.xlabel("total timestep = 1000")
+plt.ylabel("x-position")
+plt.title("x-position over timestep plot")
+plt.show()
+plt.close()
+
+#to calculate y-displacement
+#calculate the difference between each pair of positions
+#add all differences to find sum --> total
+#divide over timestep --> average
+numy = 0
+y_displacement = 0
+y_array = []
+while numy < (len(y_positions)-1):
+    y_displacement += (y_positions[numy+1] - y_positions[numy])
+    y_array.append(y_displacement)
+    numy += 1
+
+print(f'total y-displacement is: {y_displacement}')
+
+average_y = y_displacement/timesteps
+print(f'average y-displacement is: {average_y}')
+
+plt.scatter(range(0,len(y_array)), y_array, color = "blue")
+plt.xlim(0, len(y_array))
+plt.xlabel("total timestep = 1000")
+plt.ylabel("y-position")
+plt.title("y-position over timestep plot")
+plt.show()
+plt.close()
+
+#how to plot displacement for multiple particles?
+#instead of a list, use array
+#each row/column is a different particle
+#plot both row/columns individually
+#find the average displacement over time for each row/column
+#plot that ^ ?
