@@ -13,3 +13,4 @@ Currently, multiple Particle objects can collide against one another and the wal
 
 To-do next:
 - Find average displacement over time to create a slope.
+- Fix docstrings to follow https://softdes.olin.edu/docs/readings/1-python-basics/#docstrings. 
