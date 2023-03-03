@@ -20,7 +20,7 @@ from itertools import combinations
 
 #details of Pygame window: color and size
 background_color = (255, 204, 255)
-(width, height) = (500, 500)
+(width, height) = (1400, 750)
 
 #array to hold Particle objects later
 all_particles = []
@@ -181,15 +181,16 @@ def collide(p1, p2):
 #creating Particles
 n = 0
 #set the number of Particles to create; pick between 2-50
-m = random.randint(2, 50)
+m = random.randint(2, 100)
 while n in range(m):
     #pick random size within specified range
     #can't be smaller than 1/50th of height's length
-    #can't be larger than 1/10th of height's length
-    size = random.randint(int(height/50), int(height/10))
+    #can't be larger than 1/20th of width's length
+    size = random.randint(int(height/50), int(width/20))
     
     #possible locations, as a list
-    locations = [*range(size, width-size)]
+    x_locations = [*range(size, width-size)]
+    y_locations = [*range(size, height-size)]
     
     #creates Gaussian distribution of initial velocities
     #Particles will have initial random velocity from Gaussian distribution
@@ -197,8 +198,8 @@ while n in range(m):
     gauss = np.random.normal(loc=0.0, scale=0.2, size=None)
     
     #random location within screen
-    x = random.choice(locations)
-    y = random.choice(locations)
+    x = random.choice(x_locations)
+    y = random.choice(y_locations)
     
     #checks for overlap
     for p2 in all_particles:
