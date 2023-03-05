@@ -232,9 +232,11 @@ for n in range(4):
 print("averages")
 print(averages)
 
+
 #plotting displacement with time
 plt.scatter([1, 10, 100, 1000], averages, color = "red")
-#plt.yscale("log")
+plt.yscale("log")
+plt.xscale("log")
 #plt.xlim(0, len(x_array))
 #plt.ylim(0, len(y_array))
 plt.xlabel("timestep")
